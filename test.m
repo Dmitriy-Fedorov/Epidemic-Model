@@ -1,6 +1,7 @@
 % Initial Setup
 global RunTime
 r0 = 3;
+R44 = 13;
 monte_rounds = 10;
 number_of_disconnected_nodes = 0;
 n_disconnected_I1 = 0; % floor(rand(1)*5);
