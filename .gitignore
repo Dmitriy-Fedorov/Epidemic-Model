@@ -1,0 +1,19 @@
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
+*.png
+*.jpg
+
+# my
+*.xlsx
+*.csv
+**/fig
+**/__pycache__
+**/.vscode
+**/.ipynb_checkpoints
+
