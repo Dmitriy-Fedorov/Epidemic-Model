@@ -12,6 +12,7 @@
 # my
 *.xlsx
 *.csv
+*.asv
 **/fig
 **/__pycache__
 **/.vscode

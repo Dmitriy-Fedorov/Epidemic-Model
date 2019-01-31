@@ -26,13 +26,6 @@ def calc_R0(G, p):
 class TransitionDiagram:
 
     def __init__(self, paramet):
-        paramet_example = {
-            'alpha': [0.03, 0.06], # infect rate 
-            'mu': [0.14, 0.14], # sleep s 
-            'gamma': [0.35, 0.47], # rec rate 
-            'lambda': [0.05, 0.32], # sleep I1 
-            'kappa': [0.04, 0.31] # sleep I2    % [I2_s -> I2_a, I2_a -> I2_s]
-        }
         self.status_list = ['S_a','S_s','I1_a','I1_s','I2_a','I2_s']
         self.transitions = {
             'S_a': {

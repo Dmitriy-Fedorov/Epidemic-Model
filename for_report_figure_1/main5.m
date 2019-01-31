@@ -1,18 +1,19 @@
 clear; clc; close all;
+rng(17)
 % setenv('MKL_DEBUG_CPU_TYPE', '4')
 global RunTime
 % Initial Setup
 r0 = 2;
 monte_rounds = 15;
-number_of_disconnected_nodes = 50;
-n_disconnected_I1 = 2; % floor(rand(1)*5);
-n_disconnected_I2 = 2; % floor(rand(1)*5);
+number_of_disconnected_nodes = 0;
+n_disconnected_I1 = 0; % floor(rand(1)*5);
+n_disconnected_I2 = 0; % floor(rand(1)*5);
 n_disconnected_S = number_of_disconnected_nodes - n_disconnected_I1 - n_disconnected_I2;
 
 global alpha mu gamma lambda kappa N
 dim = [30,30];
 N = dim(1)*dim(2);
-RunTime = 50;
+RunTime = 300;
 
 Net1 = NetGen_GeoUniform(N,r0,dim,1);
 Net2 = NetGen_Geo(N-number_of_disconnected_nodes,r0,dim);
@@ -47,13 +48,12 @@ paramet = {alpha, mu, gamma, lambda, kappa};
 [R0_uni, R1_uni, R2_uni; R0_rnd ,R1_rnd, R2_rnd]
 
 %%
-% [t, uni_, rnd_] = monte(monte_rounds,N,Para,NetUni,NetRnd,x0,StopCond,init_infection);
-rnd_ = csvread('monte_random_15.csv',1);
-[t, rnd_] = standartize(rnd_(1:RunTime+1,:)', 0:RunTime, 0.05);
-
-
-uni_ = csvread('monte_uniform_15.csv',1);
-[t, uni_] = standartize(uni_(1:RunTime+1,:)', 0:RunTime, 0.05);
+[t, uni_, rnd_] = monte(monte_rounds,N,Para,NetUni,NetRnd,x0,StopCond,init_infection);
+% rnd_ = csvread(sprintf('monte_random_r=%g_15.csv',r0),1);
+% [t, rnd_] = standartize(rnd_(1:RunTime+1,:)', 0:RunTime, 0.05);
+% 
+% uni_ = csvread(sprintf('monte_uniform_r=%g_15.csv',r0),1);
+% [t, uni_] = standartize(uni_(1:RunTime+1,:)', 0:RunTime, 0.05);
 % plot_stch(paramet,uni_,rnd_,N,t,NetUni,NetRnd, true)
 % renderNetwork(Net1,21)
 % renderNetwork(Net2,22)
@@ -125,22 +125,22 @@ end;
 % rnd_temp(1,:) = rnd_temp(1,:) + nsa;
 % rnd_temp(2,:) = rnd_temp(2,:) + nss;
 
-% figure(9)
-% error_rnd = (Xrnd - rnd_);
-% plot(t,error_rnd(1:end,:)./N)
-% title('rnd error')
-% ylim([-0.1,0.1])
-% grid minor; grid on
-% lege = {'Sa';'Ss';'Ia 1';'Is 1';'Ia 2';'Is 2'};
-% legend(lege{3:end})
-% 
-% figure(10)
-% error_uni = (Xuni-uni_);
-% plot(t,error_uni(3:end,:)./N)
-% ylim([-0.1,0.1])
-% title('uni error')
-% grid minor; grid on
-% legend(lege{3:end})
+figure(9)
+error_rnd = (Xrnd - rnd_);
+plot(t,error_rnd(1:end,:)./N)
+title('rnd error')
+ylim([-0.1,0.1])
+grid minor; grid on
+lege = {'Sa';'Ss';'Ia 1';'Is 1';'Ia 2';'Is 2'};
+legend(lege{3:end})
+
+figure(10)
+error_uni = (Xuni-uni_);
+plot(t,error_uni(3:end,:)./N)
+ylim([-0.1,0.1])
+title('uni error')
+grid minor; grid on
+legend(lege{3:end})
 
 %% additional plots
 % plot_ode(paramet,Xuni,Xrnd,N,t,NetUni,NetRnd,false)
