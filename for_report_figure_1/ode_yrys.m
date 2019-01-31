@@ -1,25 +1,21 @@
-function [timevec, compartments] = ode_yrys(Net, time_range)
+function [timevec, compartments] = ode_yrys(Net, time_range, I1a_Initial, I2a_Initial, N)
 % legend('i1_a','i2_a','s_a','i2_s','s_s','i1_s') 
-global alpha mu gamma lambda kappa
-global N I1a_Initial I2a_Initial dt
+global alpha mu gamma lambda kappa dt
+dt = 0.05;
 q = I1a_Initial;
 b = I2a_Initial;
-% i1a = [ones(q,1); zeros(N-q,1)];
-% i2a = [zeros(q,1); ones(b,1); zeros(N-q-b,1)];
-% sa = [zeros(q+b,1); ones(N-q-b,1)];
-% rng(5) % seed, control random generation
 infected = randperm(N, I1a_Initial + I2a_Initial); % generate distinct random integers
 i1a = zeros(N,1);
-i1a(infected(1:I1a_Initial)) = 1;  % this random nodes will be infected
+i1a(infected(1:I1a_Initial)) = 1;
 i2a = zeros(N,1);
-i2a(infected(I1a_Initial+1:end)) = 1;  % this random nodes will be infected
+i2a(infected(I1a_Initial+1:end)) = 1;
 sa = ones(N,1);
-sa(infected) = 0;  % this nodes had been infected
+sa(infected) = 0;
 initial_w = [i1a; i2a; sa; zeros(3*N,1)]; % initial conditions
 clear i1a i2a sa
 adj = Net{5}{1};
 
-[t_values, sol_values] = ode45(@(t,w) diff_eq(t,w,mu,lambda,alpha,gamma,kappa, adj, N), time_range, initial_w);
+[t_values, sol_values] = ode45(@(t,w) diff_eq_heterogen(t,w,mu,lambda,alpha,gamma,kappa, adj, N), time_range, initial_w);
 
 compartments = zeros(length(t_values), 6);
 for i=1:6
