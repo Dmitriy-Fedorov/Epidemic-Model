@@ -26,13 +26,6 @@ def calc_R0(G, p):
 class TransitionDiagram:
 
     def __init__(self, paramet):
-        paramet_example = {
-            'alpha': [0.03, 0.06], # infect rate 
-            'mu': [0.14, 0.14], # sleep s 
-            'gamma': [0.35, 0.47], # rec rate 
-            'lambda': [0.05, 0.32], # sleep I1 
-            'kappa': [0.04, 0.31] # sleep I2    % [I2_s -> I2_a, I2_a -> I2_s]
-        }
         self.status_list = ['S_a','S_s','I1_a','I1_s','I2_a','I2_s']
         self.transitions = {
             'S_a': {
@@ -171,14 +164,56 @@ class EpidemicGraph:
             self.init_state(I1_a, I2_a)
             self.connect_nodes()
 
+    @classmethod
+    def load(cls, N, radius, paramet, I1_a=1, I2_a=1, grid_size=[30,30], net='Geometric Random'):
+        def factory(r=1.5):
+            G = nx.from_numpy_matrix(pd.read_csv(f'adj_{r}.csv', header=None).values)
+            pos = pd.read_csv(f'pos_{r}.csv', header=None).values.T
+            pos_dict = {}
+            for i, xy in enumerate(pos):
+                pos_dict[i] = xy
+            nx.set_node_attributes(G, pos_dict, 'position')
+            
+            inf = pd.read_csv(f'inf_{r}.csv', header=None).values[0]
+            inf_1 = inf[0:len(inf)//2]
+            inf_2 = inf[len(inf)//2:]
+            # print(len(inf_1), len(inf_2))
+            for node_id in G.nodes():
+                if node_id in inf_1:
+                    G.node[node_id]['state'] = 'I1_a'
+                    G.node[node_id]['init_state'] = 'I1_a'
+                    # print(node_id, 'I1_a')
+                elif node_id in inf_2:
+                    G.node[node_id]['state'] = 'I2_a'
+                    G.node[node_id]['init_state'] = 'I2_a'
+                    # print(node_id, 'I2_a')
+                else:
+                    G.node[node_id]['state'] = 'S_a'
+                    G.node[node_id]['init_state'] = 'S_a'
+            return G
+        
+        self = cls(N, radius, paramet, I1_a, I2_a, grid_size, net, False)
+        self.G = factory(radius)
+        return self
+
+    def reset(self):
+        temp = {}
+        for k,v in self.population_history.items():
+            temp[k] = [v[0]]
+        self.population_history = temp
+        for i in range(self.population_size):
+            state = self.G.node[i]['init_state']
+            self.G.node[i]['state'] = state
+
+
     def create_nodes(self, n):
         if self.G.graph['net'] == 'Geometric Random':
             for i in range(n):
-                self.G.add_node(i, state='S_a', 
+                self.G.add_node(i, state='S_a', init_state='S_a',
                                 position=uniform(0, self.grid_size, 2))
         elif self.G.graph['net'] == 'Uniform Grid':
             for i in range(n):
-                self.G.add_node(i, state='S_a', 
+                self.G.add_node(i, state='S_a', init_state='S_a',
                                 position=np.array([i//self.grid_size[0], i%self.grid_size[1]]))
         else:
             assert False
@@ -206,8 +241,10 @@ class EpidemicGraph:
         I2 = unlucky_nodes[I1_a:]
         for node_id in I1:
             self.G.node[node_id]['state'] = 'I1_a'
+            self.G.node[node_id]['init_state'] = 'I1_a'
         for node_id in I2:
             self.G.node[node_id]['state'] = 'I2_a'
+            self.G.node[node_id]['init_state'] = 'I2_a'
                 
 
     def step(self):
@@ -231,40 +268,8 @@ class EpidemicGraph:
         assert sum(population_count.values()) == self.population_size
         return population_count
 
-    @classmethod
-    def load(cls, N, radius, paramet, I1_a=1, I2_a=1, grid_size=[30,30], net='Geometric Random'):
-        def factory(r=1.5):
-            G = nx.from_numpy_matrix(pd.read_csv(f'adj_{r}.csv', header=None).values)
-            pos = pd.read_csv(f'pos_{r}.csv', header=None).values.T
-            pos_dict = {}
-            for i, xy in enumerate(pos):
-                pos_dict[i] = xy
-            nx.set_node_attributes(G, pos_dict, 'position')
-            
-            inf = pd.read_csv(f'inf_{r}.csv', header=None).values[0]
-            inf_1 = inf[0:len(inf)//2]
-            inf_2 = inf[len(inf)//2:]
-            # print(len(inf_1), len(inf_2))
-            for node_id in G.nodes():
-                if node_id in inf_1:
-                    G.node[node_id]['state'] = 'I1_a'
-                elif node_id in inf_2:
-                    G.node[node_id]['state'] = 'I2_a'
-                else:
-                    G.node[node_id]['state'] = 'S_a'
-            return G
-        
-        self = cls(N, radius, paramet, I1_a, I2_a, grid_size, net, False)
-        self.G = factory(radius)
-        return self
-
-
-
     def run(self, nsteps):
-        temp = {}
-        for k,v in self.population_history.items():
-            temp[k] = [v[0]]
-        self.population_history = temp
+        self.reset()
         for _ in range(nsteps):
             self.step()
 

@@ -17,10 +17,11 @@ Net2 = NetGen_Geo_Read(N,r);
 NetUni = NetCmbn({Net1, Net1});
 NetRnd = NetCmbn({Net2, Net2});
 
-I1_a_initial_uni=20;
-I2_a_initial_uni=20;
-I1_a_initial_rnd=20;
-I2_a_initial_rnd=20;
+init = 50;
+I1_a_initial_uni=init;
+I2_a_initial_uni=init;
+I1_a_initial_rnd=init;
+I2_a_initial_rnd=init;
 
 % alpha = [0.35, 0.10];   % infect rate
 % mu = [0.04, 0.04];     % sleep s
@@ -48,9 +49,10 @@ x0_rnd = Initial_Cond_Gen(N,'Population',[3,5],[I1_a_initial_rnd,I2_a_initial_rn
 x0 = {x0_uni, x0_rnd};
 
 paramet = {alpha, mu, gamma, lambda, kappa};
+paramet_mat = cell2mat(paramet);
 
 %% Stochastic
-% monte_rounds = 30;
+% monte_rounds = 20;
 [t, uni_, rnd_] = monte(monte_rounds,N,Para,NetUni,NetRnd,x0,StopCond);
 %% Discreate stochastic
 rnd_d = csvread(sprintf('monte_random_r=%g_5.csv',r),1);
@@ -64,12 +66,12 @@ uni_d = csvread(sprintf('monte_uniform_r=%g_5.csv',r),1);
 [t, Xuni, Xrnd] = ode(N,Para,NetUni,NetRnd,x0,StopCond);
 %% ODE yrys
 
-tic
-[t, Xuni_y] = ode_yrys_2(NetUni, [0, RunTime], x0_uni, N);
-toc
-tic
-[t, Xrnd_y] = ode_yrys_2(NetRnd, [0, RunTime], x0_rnd, N);
-toc
+% tic
+% [t, Xuni_y] = ode_yrys_2(NetUni, [0, RunTime], x0_uni, N);
+% toc
+% tic
+% [t, Xrnd_y] = ode_yrys_2(NetRnd, [0, RunTime], x0_rnd, N);
+% toc
 %% Homogen
 
 % alpha = [0.25, 0.35];   % infect rate
@@ -97,26 +99,29 @@ toc
 tit = {'Sa','Ss','Infected_a 1 vs Time','Infected_s 1 vs Time',...
     'Infected_a 2 vs Time','Infected_s 2 vs Time'};
 i = 1;
-variable1 = RunTime/.05+1;
-shape = [4,6,variable1];
-export = zeros(shape);
+
+ss = sprintf('%g %g %g %g %g %g %g %g %g %g %d_%d', paramet_mat, RunTime, init);
+sub = sprintf('R1r_%g-R2r_%g R1u_%g-R2u_%g', R1_rnd, R2_rnd, R1_uni, R2_uni);
+mkdir(sprintf('fig/%s',sub))
+
 for z=[3,5,4,6]  % [3,5,4,6,1,2]    
-    figure(i)
-    plot(t,uni_(z,:)./N,'-b')
+    fig = figure(i);
+    plot(t,uni_(z,:)./N,'-b', 'DisplayName','I1_a uni')
     hold on
-    plot(t,rnd_(z,:)./N,'-r'); 
-    plot(t,uni_d(z,:)./N,'.b')
-    plot(t,rnd_d(z,:)./N,'.r');
-    plot(t,Xuni(z,:)./N,'--b','linewidth',1);
-    plot(t,Xrnd(z,:)./N,'--r','linewidth',1);
-    plot(t,sol_values(z,:)./N,'--k','linewidth',1)
+    plot(t,rnd_(z,:)./N,'-r', 'DisplayName','I1_a rnd')
+    plot(t,uni_d(z,:)./N,'.b', 'DisplayName','I1_a uni python')
+    plot(t,rnd_d(z,:)./N,'.r', 'DisplayName','I1_a rnd python ')
+    plot(t,Xuni(z,:)./N,'--b','linewidth',1, 'DisplayName','ODE uni')
+    plot(t,Xrnd(z,:)./N,'--r','linewidth',1, 'DisplayName','ODE rnd')
+    plot(t,sol_values(z,:)./N,'.k','linewidth',1, 'DisplayName','homogen') 
 %     plot(t,Xuni_y(z,:)./N,'-.g','linewidth',1);
 %     plot(t,Xrnd_y(z,:)./N,'--g','linewidth',1);
-    title(tit{z})
-    legend('I1_a uni','I1_a rnd','ODE uni','ODE rnd','homogen','Location','northwest');
     xlim([0, RunTime])
 %     ylim([0,1])
     grid on
     hold off
+    legend('Location','best')
+    title(tit{z})
+    saveas(fig, sprintf('fig/%s/%s %d.png',sub, ss, i))
     i = i + 1;
 end;
