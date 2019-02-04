@@ -3,7 +3,7 @@ rng(17)
 % setenv('MKL_DEBUG_CPU_TYPE', '4')
 global RunTime
 % Initial Setup
-r0 = 3;
+r0 = 2;
 monte_rounds = 5;
 number_of_disconnected_nodes = 0;
 n_disconnected_I1 = 0; % floor(rand(1)*5);
@@ -27,11 +27,6 @@ mu = [0.04, 0.04];     % sleep s
 gamma = [0.08, 0.05];  % rec rate
 lambda = [0.1, 0.12];  % sleep I1
 kappa = [0.09, 0.11];  % sleep I2    % [I2_s -> I2_a, I2_a -> I2_s]
-% % alpha = [0.02, 0.03]; % infect rate 
-% % mu = [0.14, 0.14]; % sleep s 
-% % gamma = [0.5, 0.47]; % rec rate 
-% % lambda = [0.05, 0.32]; % sleep I1 
-% % kappa = [0.04, 0.31]; % sleep I2    % [I2_s -> I2_a, I2_a -> I2_s]
 I1_a_initial_uni=10;
 I2_a_initial_uni=10;
 I1_a_initial_rnd=10 - n_disconnected_I1;
