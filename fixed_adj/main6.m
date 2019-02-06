@@ -23,17 +23,33 @@ I2_a_initial_uni=init;
 I1_a_initial_rnd=init;
 I2_a_initial_rnd=init;
 
-% alpha = [0.35, 0.10];   % infect rate
+% % R1<1; R2<1
+% alpha = [0.05, 0.06]; % infect rate 
+% mu = [0.14, 0.14]; % sleep s 
+% gamma = [0.3, 0.37]; % rec rate 
+% lambda = [0.05, 0.32]; % sleep I1 
+% kappa = [0.04, 0.31]; % sleep I2    % [I2_s -> I2_a, I2_a -> I2_s]
+
+% % R1>1; R2<1
+% alpha = [0.25, 0.05]; % infect rate 
+% mu = [0.04, 0.04]; % sleep s 
+% gamma = [0.25, 0.5]; % rec rate 
+% lambda = [0.05, 0.12]; % sleep I1 
+% kappa = [0.04, 0.15]; % sleep I2    % [I2_s -> I2_a, I2_a -> I2_s]
+
+% R1<1; R2>1
+alpha = [0.03, 0.06]; % infect rate 
+mu = [0.04, 0.04]; % sleep s 
+gamma = [0.24, 0.07]; % rec rate 
+lambda = [0.06, 0.12]; % sleep I1 
+kappa = [0.05, 0.15]; % sleep I2    % [I2_s -> I2_a, I2_a -> I2_s]
+
+% % R1>1  R2>1
+% alpha = [0.25, 0.35];   % infect rate
 % mu = [0.04, 0.04];     % sleep s
-% gamma = [0.04, 0.03];  % rec rate
+% gamma = [0.04, 0.35];  % rec rate
 % lambda = [0.06, 0.07];  % sleep I1
 % kappa = [0.05, 0.06];  % sleep I2    % [I2_s -> I2_a, I2_a -> I2_s]
-
-alpha = [0.25, 0.35];   % infect rate
-mu = [0.04, 0.04];     % sleep s
-gamma = [0.04, 0.35];  % rec rate
-lambda = [0.06, 0.07];  % sleep I1
-kappa = [0.05, 0.06];  % sleep I2    % [I2_s -> I2_a, I2_a -> I2_s]
 
 [R0_uni,R1_uni,R2_uni] = calc_R0(NetUni, alpha, mu, gamma, lambda, kappa, N);
 [R0_rnd,R1_rnd,R2_rnd] = calc_R0(NetRnd, alpha, mu, gamma, lambda, kappa, N);
@@ -99,7 +115,7 @@ paramet_mat = cell2mat(paramet);
 tit = {'Sa','Ss','Infected_a 1 vs Time','Infected_s 1 vs Time',...
     'Infected_a 2 vs Time','Infected_s 2 vs Time'};
 i = 1;
-run_id = 1;
+run_id = 3;
 ss = sprintf('%g %g %g %g %g %g %g %g %g %g %d_%d_%d', paramet_mat, RunTime, init, monte_rounds);
 sub = sprintf('%d) R1r_%g-R2r_%g R1u_%g-R2u_%g',run_id, R1_rnd, R2_rnd, R1_uni, R2_uni);
 mkdir(sprintf('fig/%s',sub))
@@ -130,14 +146,14 @@ end;
 
 %% Export
 
-dlmwrite(sprintf('data/%d) Stch_uni_%d_%d.txt',run_id, RunTime, monte_rounds),uni_','delimiter','\t')
-dlmwrite(sprintf('data/%d) Stch_rnd_%d_%d.txt',run_id, RunTime, monte_rounds),rnd_','delimiter','\t')
-dlmwrite(sprintf('data/%d) Ode_uni_%d_%d.txt',run_id, RunTime, monte_rounds),Xuni','delimiter','\t')
-dlmwrite(sprintf('data/%d) Ode_rnd_%d_%d.txt',run_id, RunTime, monte_rounds),Xrnd','delimiter','\t')
-dlmwrite(sprintf('data/%d) Homogen_%d_%d.txt',run_id, RunTime, monte_rounds),hmg_sol','delimiter','\t')
+dlmwrite(sprintf('data/%d) Stch_uni_%g_%d_%d.txt',run_id, r, RunTime, monte_rounds),uni_','delimiter','\t')
+dlmwrite(sprintf('data/%d) Stch_rnd_%g_%d_%d.txt',run_id, r, RunTime, monte_rounds),rnd_','delimiter','\t')
+dlmwrite(sprintf('data/%d) Ode_uni_%g_%d_%d.txt',run_id, r, RunTime, monte_rounds),Xuni','delimiter','\t')
+dlmwrite(sprintf('data/%d) Ode_rnd_%g_%d_%d.txt',run_id, r, RunTime, monte_rounds),Xrnd','delimiter','\t')
+dlmwrite(sprintf('data/%d) Homogen_%g_%d_%d.txt',run_id, r, RunTime, monte_rounds),hmg_sol','delimiter','\t')
 
-dlmwrite(sprintf('data/%d) Stch_rnd_cil_%d_%d.txt',run_id, RunTime, monte_rounds), ci_rnd{1}','delimiter','\t')
-dlmwrite(sprintf('data/%d) Stch_rnd_cih_%d_%d.txt',run_id, RunTime, monte_rounds), ci_rnd{2}','delimiter','\t')
+dlmwrite(sprintf('data/%d) Stch_rnd_cil_%g_%d_%d.txt',run_id, r, RunTime, monte_rounds), ci_rnd{1}','delimiter','\t')
+dlmwrite(sprintf('data/%d) Stch_rnd_cih_%g_%d_%d.txt',run_id, r, RunTime, monte_rounds), ci_rnd{2}','delimiter','\t')
 
-dlmwrite(sprintf('data/%d) Stch_uni_cil_%d_%d.txt',run_id, RunTime, monte_rounds), ci_uni{1}','delimiter','\t')
-dlmwrite(sprintf('data/%d) Stch_uni_cih_%d_%d.txt',run_id, RunTime, monte_rounds), ci_uni{2}','delimiter','\t')
+dlmwrite(sprintf('data/%d) Stch_uni_cil_%g_%d_%d.txt',run_id, r, RunTime, monte_rounds), ci_uni{1}','delimiter','\t')
+dlmwrite(sprintf('data/%d) Stch_uni_cih_%g_%d_%d.txt',run_id, r, RunTime, monte_rounds), ci_uni{2}','delimiter','\t')
