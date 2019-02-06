@@ -1,4 +1,5 @@
 function [t, X1, X2] = ode(N,Para,NetUni,NetRnd,x0,StopCond)
+global dt
 RunTime = StopCond{2};
 M = Para{1};
 x0_uni = x0{1};
@@ -29,7 +30,7 @@ end
 
 ts1 = timeseries(X1_,t1);
 ts2 = timeseries(X2_,t2);
-dt = 0.05;
+% dt = 0.05;
 % makes vectors of the same length
 [X11,X22] = synchronize(ts1,ts2,'Uniform','Interval', dt);
 X1 = X11.data;
