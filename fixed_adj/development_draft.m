@@ -69,8 +69,12 @@ hold on
 fill_ci(t',low2,high2,'g')
 
 %%
-slice = {ci_rnd{1}(1,:), ci_rnd{2}(1,:)}
-fill_ci(t', {ci_rnd{1}(1,:), ci_rnd{2}(1,:)},'g')
+slice = {ci_rnd{1}(1,:), ci_rnd{2}(1,:)};
+fill_ci(t', {ci_rnd{1}(1,:), ci_rnd{2}(1,:)},'g');
+%%
+adj = Net2{1,5}{1};
+
+dlmwrite('adj_2.csv',full(adj),'delimiter',',')
 %%
 exp1 = squeeze(StateCount111(1,:,:));
 [low1,high1] = CI_df(exp1');

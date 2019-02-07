@@ -8,7 +8,7 @@ function Net=NetGen_Geo_Read(N, r)
 % Redistribution and use in source and binary forms, with or without
 % modification, are permitted
 pos = csvread(sprintf('pos_%g.csv',r));
-adj_loaded = csvread(sprintf('adj_%g.csv',r));
+% adj_loaded = csvread(sprintf('adj_%g.csv',r));
 x = pos(1,:);
 y = pos(2,:);
 r2=r^2;
