@@ -80,7 +80,7 @@ class pi_node:
         self.flag_counter = 0
         self.flag_end_round = False
         self.mqttc = mqttc
-        mqttc.subscribe(self.pi_id , 1 )
+        
         # publish to neighbours
 
     
@@ -88,10 +88,10 @@ class pi_node:
         nstate = msg['state']
         if self.current_state == 'S_a':
             if self.flag_counter < self.n_neighbours and not self.flag_end_round:  # ensure communication with every neighbour
-            next_state = self.pi_td.roll_infection_dice(nstate)  
-            if next_state != self.current_state:  # if it is infected communication round is finished
-                self.next_state = next_state
-                self.flag_end_round = True
+                next_state = self.pi_td.roll_infection_dice(nstate)  
+                if next_state != self.current_state:  # if it is infected communication round is finished
+                    self.next_state = next_state
+                    self.flag_end_round = True
             
             self.flag_counter += 1
             if self.flag_counter == self.n_neighbours and not self.flag_end_round:  # if it is last neighbour node has probability to go to sleep
@@ -109,10 +109,11 @@ class pi_node:
         self.flag_end_round = False
         self.flag_counter = 0
         self.current_state = self.next_state
-        assert self.flag_counter == self.n_neighbours
+        # assert self.flag_counter == self.n_neighbours
 
     def broadcast(self):
         msg = {
+                'pi_id': self.pi_id,
                 'state': self.current_state
             }
         for node in self.pi_neighbours:  # broadcast current state
