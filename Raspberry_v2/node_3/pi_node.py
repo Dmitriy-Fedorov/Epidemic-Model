@@ -35,18 +35,17 @@ class PiTransitionDiagram:
         }
     
 
-    def roll_infection_dice(self, state, nstate): 
+    def roll_infection_dice(self, state, nstate, n_id=0): 
         transition_prob = self.transitions[state]
+        next_state = state
         if nstate == 'I1_a':
             if uniform() < transition_prob['I1_a']:
                 next_state = 'I1_a'
-                return next_state
         elif nstate == 'I2_a':
             if uniform() < transition_prob['I2_a']:
                 next_state = 'I2_a'
-                return next_state
-        else:
-            return state
+        print(n_id, 'roll_infection_dice:', state, '->', next_state)
+        return next_state
             
     def roll_end_state(self, state):
         transition_prob = self.transitions[state]
@@ -56,7 +55,6 @@ class PiTransitionDiagram:
             if uniform() < transition_prob['S_s']:
                 next_state = 'S_s'
             
-        
         else:  # no adjacency matrix rerquired, node transition
             nrand = uniform()
             next_state = state  # default next state
@@ -65,7 +63,7 @@ class PiTransitionDiagram:
                 if nrand < 0:
                     next_state = k
                     break
-        
+        print('roll_end_state:', state, '->', next_state)
         return next_state
 
 
@@ -91,26 +89,27 @@ class pi_node:
     def handle_msg(self, msg):
         nstate = msg['state']
         # print('handle_msg: state:', nstate)
-        self.next_state = self.current_state
+        # self.next_state = self.current_state
 
-        if self.current_state == 'S_a':
-            if self.flag_counter < self.n_neighbours and not self.flag_end_round:  # ensure communication with every neighbour
-                next_state = self.pi_td.roll_infection_dice(self.current_state, nstate)  
-                # print('handle_msg: next_state_1:', next_state)
-                if next_state != self.current_state:  # if it is infected communication round is finished
-                    self.next_state = next_state
-                    self.flag_end_round = True
-            
+        if self.current_state == 'S_a' and not self.flag_end_round:  # if it is not yet indected
             self.flag_counter += 1
-            if self.flag_counter == self.n_neighbours and not self.flag_end_round:  # if it is last neighbour node has probability to go to sleep
-                next_state = self.pi_td.roll_end_state(self.current_state)
-                # print('handle_msg: next_state_2:', next_state)
+            infected = False
+            if self.flag_counter == self.n_neighbours:  # if all neighbours had finished transmission
+                self.flag_end_round = True              # call it and round
+            next_state = self.pi_td.roll_infection_dice(self.current_state, nstate, self.pi_id) 
+
+            if next_state != self.current_state:  # if it is infected communication round is finished
                 self.next_state = next_state
+                infected = True
                 self.flag_end_round = True
-        else:
-            if not self.flag_end_round:  # if it 
+                self.flag_counter = self.n_neighbours
+            if self.flag_counter == self.n_neighbours and not infected:
                 next_state = self.pi_td.roll_end_state(self.current_state)
-                # print('handle_msg: next_state_3:', next_state)
+                self.next_state = next_state
+        else:
+            if not self.flag_end_round:  # if it is node transition
+                next_state = self.pi_td.roll_end_state(self.current_state)
+                print('handle_msg: next_state_3:', next_state)
                 self.next_state = next_state
                 self.flag_end_round = True
                 self.flag_counter = self.n_neighbours
@@ -119,6 +118,7 @@ class pi_node:
         assert self.flag_counter == self.n_neighbours
         self.flag_end_round = False
         self.flag_counter = 0
+        print('transit_to_next_state:', self.current_state, '->', self.next_state)
         self.current_state = self.next_state
         
 
@@ -129,7 +129,7 @@ class pi_node:
             }
         for node in self.pi_neighbours:  # broadcast current state
             topic = str(node['pi_id'])
-            self.mqttc.publish(topic, json.dumps(msg)) 
+            self.mqttc.publish(topic, json.dumps(msg), 2) 
 
     def __str__(self):
         return ">> id: {}, cstate: {}, nstate: {}".format(self.pi_id, self.current_state, self.next_state)
