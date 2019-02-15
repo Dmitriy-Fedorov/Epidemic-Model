@@ -5,7 +5,7 @@ import itertools
 import sys
 
 
-broker_ip = '192.168.0.101'
+broker_ip = '192.168.0.104'
 connflag = False
 try:
     my_id = sys.argv[1]
@@ -48,7 +48,7 @@ def on_message(client, userdata, msg):
     print("payload: " + str(msg.payload))
     try:
         my_node.handle_msg(msg)
-    except e:
+    except Exception as e:
         print(e)
     
 
