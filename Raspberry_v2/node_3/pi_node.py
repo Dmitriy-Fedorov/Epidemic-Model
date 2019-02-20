@@ -96,11 +96,16 @@ class pi_node:
             infected = False
             if self.flag_counter == self.n_neighbours:  # if all neighbours had finished transmission
                 self.flag_end_round = True              # call it and round
+                self.mqttc.publish('finish', str(self.pi_id), qos=2)
+                print('finish 1')
             next_state = self.pi_td.roll_infection_dice(self.current_state, nstate, self.pi_id) 
 
             if next_state != self.current_state:  # if it is infected communication round is finished
                 self.next_state = next_state
                 infected = True
+                if not self.flag_end_round:
+                    self.mqttc.publish('finish', str(self.pi_id), qos=2)
+                    print('finish 2')
                 self.flag_end_round = True
                 self.flag_counter = self.n_neighbours
             if self.flag_counter == self.n_neighbours and not infected:
@@ -109,10 +114,12 @@ class pi_node:
         else:
             if not self.flag_end_round:  # if it is node transition
                 next_state = self.pi_td.roll_end_state(self.current_state)
-                print('handle_msg: next_state_3:', next_state)
+                # print('handle_msg: next_state_3:', next_state)
                 self.next_state = next_state
                 self.flag_end_round = True
                 self.flag_counter = self.n_neighbours
+                self.mqttc.publish('finish', str(self.pi_id), qos=2)
+                print('finish 3')
 
     def transit_to_next_state(self):
         assert self.flag_counter == self.n_neighbours
