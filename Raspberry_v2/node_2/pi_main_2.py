@@ -7,7 +7,9 @@ from pprint import pprint
 
 
 # broker_ip = '192.168.0.104'
-broker_ip = 'localhost'
+# broker_ip = 'localhost'
+broker_ip = '10.1.199.251'
+
 connflag = False
 startflag = False
 initflag = False
@@ -49,7 +51,7 @@ def on_message(client, userdata, msg):
     global my_node
     # print("-t {} | -p {}".format(msg.topic, msg.payload.decode()) )
     try:
-        js = json.loads(msg.payload)
+        js = json.loads(msg.payload.decode())
         my_node.handle_msg(js)
         # print(js)
     except Exception as e:
@@ -67,7 +69,7 @@ def on_stop(client, userdata, msg):
 
 def on_td(client, userdata, msg): 
     global my_node
-    paramet = json.loads(msg.payload)
+    paramet = json.loads(msg.payload.decode())
     my_node.pi_td = PiTransitionDiagram(paramet)
     print("Parameter change command : {}".format(msg.payload))
 
@@ -77,12 +79,13 @@ def on_next(client, userdata, msg):
 
 def init(client, userdata, msg): 
     global my_node, initflag
-    js = json.loads(msg.payload)
+    js = json.loads(msg.payload.decode())
     my_id = my_node.pi_id
 
     my_node.current_state = js[my_id]['state']
     my_node.init_state = js[my_id]['state']
     my_node.pi_neighbours = [{"pi_id": x} for x in js[my_id]['neighbours']]
+    my_node.current_step = 0
 
     print("Initialization...: {}".format(js[my_id]))
     initflag = True
@@ -96,12 +99,12 @@ mqttc.message_callback_add("init", init)
 mqttc.message_callback_add("next", on_next)
 
 mqttc.connect(broker_ip)
-mqttc.subscribe(str(my_id), 1)
-mqttc.subscribe("start", 1)
-mqttc.subscribe("stop", 1)
-mqttc.subscribe("paramet", 1)
-mqttc.subscribe("init", 1)
-mqttc.subscribe("next", 1)
+mqttc.subscribe(str(my_id), 2)
+mqttc.subscribe("start", 2)
+mqttc.subscribe("stop", 2)
+mqttc.subscribe("paramet", 2)
+mqttc.subscribe("init", 2)
+mqttc.subscribe("next", 2)
 mqttc.loop_start()
 while not connflag: time.sleep(0.5)
 print('Starting...')
@@ -113,19 +116,22 @@ while True:
     while not startflag: time.sleep(0.5)
 
     for i in itertools.count():
+        my_node.current_step = i
         print('{}) _____________________________________________'.format(i))
         time.sleep(0.2)
-        my_node.broadcast()
+        my_node.broadcast(i)
         mqttc.publish('state', json.dumps({"step": i, "id": my_node.pi_id, 'state': my_node.current_state}))
         while not nextflag: 
             time.sleep(0.1)
         nextflag = False
         print(my_node)
-        my_node.transit_to_next_state()
         time.sleep(0.1)
+        my_node.transit_to_next_state()
+        
 
         if stopflag:
             initflag = False
+            startflag = False
             print('Simulation is stopped...')
             print('\n\n\n\n\n\n_______________________________________')
             stopflag = False

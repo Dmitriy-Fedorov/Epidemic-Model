@@ -75,6 +75,7 @@ class pi_node:
         self.pi_neighbours = pi_neighbours
         self.pi_td = pi_td
         self.current_state = state
+        self.current_step = 0
         self.next_state = None
         self.init_state = state
         self.flag_counter = 0
@@ -87,9 +88,14 @@ class pi_node:
 
     # publish to neighbours
     def handle_msg(self, msg):
+        # example # msg = {"step": 161, "id": 3, "state": "I2_s"}
         nstate = msg['state']
         # print('handle_msg: state:', nstate)
         # self.next_state = self.current_state
+        # print('here', msg)
+        if self.current_step != msg['step']:
+            print('!!! Out of step msg {}: {} !!!'.format(self.current_step, msg))
+            return None
 
         if self.current_state == 'S_a' and not self.flag_end_round:  # if it is not yet indected
             self.flag_counter += 1
@@ -129,8 +135,9 @@ class pi_node:
         self.current_state = self.next_state
         
 
-    def broadcast(self):
+    def broadcast(self, current_step):
         msg = {
+                'step': current_step,
                 'pi_id': self.pi_id,
                 'state': self.current_state
             }
