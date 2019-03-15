@@ -3,12 +3,21 @@ import paho.mqtt.client as paho
 import time
 import itertools
 import json
+import sys
+import os
 from pprint import pprint
 
 
+# sys.path.append(os.getcwd())
+
+print(os.getcwd())
+if len(sys.argv) == 2:
+    os.chdir(os.getcwd() + os.sep + sys.argv[1])
+    print(os.getcwd())
 # broker_ip = '192.168.0.104'
 # broker_ip = 'localhost'
-broker_ip = '10.1.199.251'
+# broker_ip = '10.1.199.251'
+broker_ip = '10.101.6.111'
 
 connflag = False
 startflag = False
@@ -77,6 +86,9 @@ def on_next(client, userdata, msg):
     global nextflag
     nextflag = True
 
+def on_kill(client, userdata, msg): 
+    sys.exit(0)
+
 def init(client, userdata, msg): 
     global my_node, initflag
     js = json.loads(msg.payload.decode())
@@ -89,7 +101,7 @@ def init(client, userdata, msg):
 
     print("Initialization...: {}".format(js[my_id]))
     initflag = True
-
+ 
 mqttc.on_connect = on_connect
 mqttc.on_message = on_message
 mqttc.message_callback_add("start", on_start)
@@ -97,6 +109,7 @@ mqttc.message_callback_add("stop", on_stop)
 mqttc.message_callback_add("paramet", on_td)
 mqttc.message_callback_add("init", init)
 mqttc.message_callback_add("next", on_next)
+mqttc.message_callback_add("kill", on_kill)
 
 mqttc.connect(broker_ip)
 mqttc.subscribe(str(my_id), 2)
@@ -105,6 +118,7 @@ mqttc.subscribe("stop", 2)
 mqttc.subscribe("paramet", 2)
 mqttc.subscribe("init", 2)
 mqttc.subscribe("next", 2)
+mqttc.subscribe("kill", 2)
 mqttc.loop_start()
 while not connflag: time.sleep(0.5)
 print('Starting...')

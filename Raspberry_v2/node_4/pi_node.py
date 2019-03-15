@@ -63,7 +63,7 @@ class PiTransitionDiagram:
                 if nrand < 0:
                     next_state = k
                     break
-        print('roll_end_state:', state, '->', next_state)
+        # print('roll_end_state:', state, '->', next_state)
         return next_state
 
 
@@ -92,7 +92,8 @@ class pi_node:
         nstate = msg['state']
         # print('handle_msg: state:', nstate)
         # self.next_state = self.current_state
-        # print('here', msg)
+        if str(self.pi_id) == '2':
+            print(self.pi_id,'here', msg)
         if self.current_step != msg['step']:
             print('!!! Out of step msg {}: {} !!!'.format(self.current_step, msg))
             return None
@@ -143,7 +144,9 @@ class pi_node:
             }
         for node in self.pi_neighbours:  # broadcast current state
             topic = str(node['pi_id'])
-            self.mqttc.publish(topic, json.dumps(msg), 2) 
+            print(':', self.pi_id, topic, msg)
+            self.mqttc.publish(topic, json.dumps(msg), 1) 
+            print(':', self.pi_id, 'Published')
 
     def __str__(self):
         return ">> id: {}, cstate: {}, nstate: {}".format(self.pi_id, self.current_state, self.next_state)
