@@ -3,7 +3,7 @@ import networkx as nx
 from numpy.random import uniform
 from random import sample
 import pandas as pd
-
+import time 
 
 def calc_R0(G, p):
     adj = nx.adjacency_matrix(G)
@@ -116,6 +116,14 @@ class EpidemicGraph:
         for node_id in unlucky_nodes:
             self.G.node[node_id]['state'] = 'I'
                 
+    def load_csv(self, csv, I0):
+        adj = pd.read_csv(csv, header=None)
+        self.G = nx.from_numpy_matrix(adj.values)
+        for node_id in self.G.nodes:
+            self.G.node[node_id]['state'] = 'S'
+        self.init_state(I0)
+
+        
 
     def step(self):
         population_count = {
@@ -135,8 +143,12 @@ class EpidemicGraph:
         return population_count
 
     def run(self, nsteps):
-        for _ in range(nsteps):
+        l = []
+        for n in range(nsteps):
+            l.append(time.time())
             self.step()
+        l.append(time.time())
+        return l
 
     def hist2pandas(self):
         return pd.DataFrame(self.population_history)
