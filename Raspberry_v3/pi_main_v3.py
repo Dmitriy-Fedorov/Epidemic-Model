@@ -65,7 +65,7 @@ def on_connect(client, userdata, flags, rc):
 
 def on_message(client, userdata, msg): 
     global my_nodes
-    print("-t {} | -p {}".format(msg.topic, msg.payload.decode()) )
+    # print("-t {} | -p {}".format(msg.topic, msg.payload.decode()) )
     try:
         js = json.loads(msg.payload.decode())
         for my_node in my_nodes.values():
@@ -156,7 +156,7 @@ while True:
         for my_node in my_nodes.values():
             print(my_node)
             my_node.transit_to_next_state()
-        
+
 
         if stopflag:
             initflag = False
