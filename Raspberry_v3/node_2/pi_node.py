@@ -147,11 +147,10 @@ class pi_node:
                 'pi_id': self.pi_id,
                 'state': self.current_state
             }
-        for node in self.pi_neighbours:  # broadcast current state
-            topic = str(node)
-            # print(':', self.pi_id, topic, msg)
-            self.mqttc.publish(topic, json.dumps(msg), 2) 
-            # print(':', self.pi_id, 'Published')
+        topic = 'state'
+        # print(':', self.pi_id, topic, msg)
+        self.mqttc.publish(topic, json.dumps(msg), 2) 
+        # print(':', self.pi_id, 'Published')
 
     def __str__(self):
         return ">> id: {}, cstate: {}, nstate: {}".format(self.pi_id, self.current_state, self.next_state)

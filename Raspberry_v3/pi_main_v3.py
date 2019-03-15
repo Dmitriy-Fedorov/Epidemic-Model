@@ -64,6 +64,9 @@ def on_connect(client, userdata, flags, rc):
     connflag = True
 
 def on_message(client, userdata, msg): 
+    print('not_expexted', msg.payload.decode())
+
+def on_state(client, userdata, msg): 
     global my_nodes
     # print("-t {} | -p {}".format(msg.topic, msg.payload.decode()) )
     try:
@@ -120,11 +123,13 @@ mqttc.message_callback_add("paramet", on_td)
 mqttc.message_callback_add("init", init)
 mqttc.message_callback_add("next", on_next)
 mqttc.message_callback_add("kill", on_kill)
+mqttc.message_callback_add("state", on_state)
 
 mqttc.connect(broker_ip)
 
-for my_id in my_id_list:
-    mqttc.subscribe(str(my_id), 2)
+# for my_id in my_id_list:
+#     mqttc.subscribe(str(my_id), 2)
+mqttc.subscribe("state", 2)
 mqttc.subscribe("start", 2)
 mqttc.subscribe("stop", 2)
 mqttc.subscribe("paramet", 2)
@@ -147,8 +152,8 @@ while True:
         print('{}) _____________________________________________'.format(i))
         time.sleep(0.2)
         for my_node in my_nodes.values():
-            my_node.broadcast(i)
-            mqttc.publish('state', json.dumps({"step": i, "id": my_node.pi_id, 'state': my_node.current_state}))
+            # my_node.broadcast(i)
+            mqttc.publish('state', json.dumps({"step": i, "pi_id": my_node.pi_id, 'state': my_node.current_state}))
         while not nextflag: 
             time.sleep(0.1)
         nextflag = False
