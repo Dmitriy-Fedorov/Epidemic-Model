@@ -8,6 +8,7 @@
 *.zip
 *.png
 *.jpg
+*.pdf
 
 # my
 *.xlsx
