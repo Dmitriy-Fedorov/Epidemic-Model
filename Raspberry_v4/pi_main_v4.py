@@ -8,11 +8,12 @@ import os
 from pprint import pprint
 
 
-
+N = 60
 argv = sys.argv
-if len(argv) >= 3:
+if len(argv) >= 4:
     id_start = int(argv[1])
     id_stop = int(argv[2])
+    N = int(argv[3])
     assert id_start <= id_stop
     node_list = list(range(id_start, id_stop+1))
 
@@ -46,7 +47,7 @@ stopflag = False
 nextflag = False
 
 my_neighbours = []
-node_set = {str(x) for x in range(60)}
+node_set = {str(x) for x in range(N)}
 paramet = {
         'alpha': [0.5, 0.5], # infect rate 
         'mu': [0.5, 0.5], # sleep s 
@@ -121,10 +122,12 @@ def init(client, userdata, msg):
     initflag = True
 
 def on_finish(client, userdata, msg):  # on finish step
-    global node_set
+    global node_set, N, nextflag
     node_id = msg.payload.decode()
     node_set.remove(node_id)
+    print(node_set)
     if len(node_set) == 0:
+        print('Next')
         nextflag = True
         node_set = {str(x) for x in range(N)}
 
@@ -138,6 +141,7 @@ mqttc.message_callback_add("init", init)
 mqttc.message_callback_add("next", on_next)
 mqttc.message_callback_add("kill", on_kill)
 mqttc.message_callback_add("state", on_state)
+mqttc.message_callback_add("finish", on_finish)
 
 mqttc.connect(broker_ip)
 
@@ -150,6 +154,7 @@ mqttc.subscribe("paramet", 2)
 mqttc.subscribe("init", 2)
 mqttc.subscribe("next", 2)
 mqttc.subscribe("kill", 2)
+mqttc.subscribe("finish", 2)
 mqttc.loop_start()
 while not connflag: time.sleep(0.5)
 print('Starting...')
