@@ -22,13 +22,17 @@ if len(argv) >= 3:
     print(node_list)
 
 print(os.getcwd())
+
+
+
 # if len(sys.argv) == 2:
 #     os.chdir(os.getcwd() + os.sep + sys.argv[1])
 #     print(os.getcwd())
 # broker_ip = '192.168.0.104'
-broker_ip = 'localhost'
+# broker_ip = 'localhost'
 # broker_ip = '10.1.199.251'
 # broker_ip = '10.101.6.111'
+broker_ip = '10.101.21.2'
 
 
 
@@ -114,7 +118,7 @@ def init(client, userdata, msg):
 
         print("Initialization...: {}".format(js[my_id]))
     initflag = True
- 
+
 mqttc.on_connect = on_connect
 mqttc.on_message = on_message
 mqttc.message_callback_add("start", on_start)
