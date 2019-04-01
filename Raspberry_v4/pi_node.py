@@ -44,7 +44,7 @@ class PiTransitionDiagram:
         elif nstate == 'I2_a':
             if uniform() < transition_prob['I2_a']:
                 next_state = 'I2_a'
-        print(n_id, 'roll_infection_dice:', state, '->', next_state)
+        # print(n_id, 'roll_infection_dice:', state, '->', next_state)
         return next_state
             
     def roll_end_state(self, state):
@@ -109,7 +109,7 @@ class pi_node:
             if self.flag_counter == self.n_neighbours:  # if all neighbours had finished transmission
                 self.flag_end_round = True              # call it and round
                 self.mqttc.publish('finish', str(self.pi_id), qos=2)
-                print('finish 1')
+                print(self.current_step, self.pi_id, ': finish 1')
             next_state = self.pi_td.roll_infection_dice(self.current_state, nstate, self.pi_id) 
 
             if next_state != self.current_state:  # if it is infected communication round is finished
@@ -117,7 +117,7 @@ class pi_node:
                 infected = True
                 if not self.flag_end_round:
                     self.mqttc.publish('finish', str(self.pi_id), qos=2)
-                    print('finish 2')
+                    print(self.current_step, self.pi_id, ': finish 2')
                 self.flag_end_round = True
                 self.flag_counter = self.n_neighbours
             if self.flag_counter == self.n_neighbours and not infected:
@@ -131,13 +131,13 @@ class pi_node:
                 self.flag_end_round = True
                 self.flag_counter = self.n_neighbours
                 self.mqttc.publish('finish', str(self.pi_id), qos=2)
-                print('finish 3')
+                print(self.current_step, self.pi_id,  ': finish 3')
 
     def transit_to_next_state(self):
-        assert self.flag_counter == self.n_neighbours
+        # assert self.flag_counter == self.n_neighbours
         self.flag_end_round = False
         self.flag_counter = 0
-        print('transit_to_next_state:', self.current_state, '->', self.next_state)
+        print(self.current_step, ': transit_to_next_state:', self.current_state, '->', self.next_state)
         self.current_state = self.next_state
         
 
