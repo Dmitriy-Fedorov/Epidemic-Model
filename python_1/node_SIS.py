@@ -144,6 +144,7 @@ class EpidemicGraph:
 
     def run(self, nsteps):
         l = []
+        assert len(self.G.adj) == self.population_size
         for n in range(nsteps):
             l.append(time.time())
             self.step()
