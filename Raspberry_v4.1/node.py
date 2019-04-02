@@ -3,7 +3,7 @@ from numpy.random import uniform
 from random import sample
 import json
 
-print('version v3')
+print('version v4.1')
 
 class PiTransitionDiagram:
 
@@ -73,6 +73,7 @@ class pi_node:
     def __init__(self, pi_id, pi_neighbours, pi_td, mqttc, state='S_a'):  # pi_td: PiTransitionDiagram
         self.pi_id = pi_id
         self.pi_neighbours = pi_neighbours
+        self.pi_neighbours_handshake = {nid: False for nid in pi_neighbours}
         self.pi_td = pi_td
         self.current_state = state
         self.current_step = 0
@@ -97,8 +98,6 @@ class pi_node:
             return None
         # print('handle_msg: state:', nstate)
         # self.next_state = self.current_state
-        # if str(self.pi_id) == '2':
-        #     print(self.pi_id,'here', msg)
         if self.current_step != msg['step']:
             print('!!! Out of step msg {}: {} !!!'.format(self.current_step, msg))
             return None
