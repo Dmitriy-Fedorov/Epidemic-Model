@@ -73,7 +73,7 @@ class pi_node:
     def __init__(self, pi_id, pi_neighbours, pi_td, mqttc, state='S_a'):  # pi_td: PiTransitionDiagram
         self.pi_id = pi_id
         self.pi_neighbours = pi_neighbours
-        self.pi_neighbours_handshake = {nid: False for nid in pi_neighbours}  
+        self.pi_neighbours_handshake = {nid: False for nid in self.pi_neighbours}  
         self.pi_td = pi_td
         self.current_state = state
         self.current_step = 0
@@ -150,20 +150,16 @@ class pi_node:
             print('!!! Out of step msg {}: {} !!!'.format(self.current_step, msg))
             return None
         ## ------ handle_msg will drop and alert messages that are out of step before this -------
-
         self.pi_neighbours_handshake[nid] = True  # acknowledge that contact has been done with this neighbour
-
         if self.current_state == 'S_a' and not self.flag_end_round:  # if it is not yet indected
             infected = False
             if all(self.pi_neighbours_handshake.values()):  # if all neighbours had finished transmission
                 self.flag_end_round = True
             next_state = self.pi_td.roll_infection_dice(self.current_state, nstate, self.pi_id) 
-
             if next_state != self.current_state:  # has node catched virus?
                 self.next_state = next_state
                 infected = True
                 self.flag_end_round = True
-
             if all(self.pi_neighbours_handshake.values()) and not infected:
                 next_state = self.pi_td.roll_end_state(self.current_state)
                 self.next_state = next_state
@@ -173,12 +169,11 @@ class pi_node:
                 # print('handle_msg: next_state_3:', next_state)
                 self.next_state = next_state
                 self.flag_end_round = True
-        
-        if all(self.pi_neighbours_handshake.values):
+        if all(self.pi_neighbours_handshake.values()):
             self.transit_to_next_state()
-            self.current_step += 1
             self.mqttc.publish('finish', str(self.pi_id), qos=2)
             print(self.current_step, self.pi_id,  ': finish communications 4')
+            self.current_step += 1
 
     def transit_to_next_state(self):
         # assert self.flag_counter == self.n_neighbours
@@ -186,7 +181,7 @@ class pi_node:
         self.flag_counter = 0
         print(self.current_step, ': transit_to_next_state:', self.current_state, '->', self.next_state)
         self.current_state = self.next_state
-        self.pi_neighbours_handshake = {nid: False for nid in pi_neighbours} 
+        self.pi_neighbours_handshake = {nid: False for nid in self.pi_neighbours} 
         
 
     def broadcast(self, current_step):
