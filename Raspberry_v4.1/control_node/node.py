@@ -246,7 +246,13 @@ class EpidemicGraph:
             self.G.node[node_id]['state'] = 'I2_a'
             self.G.node[node_id]['init_state'] = 'I2_a'
                 
-
+    def load_csv(self, csv, I1_a, I2_a):
+        adj = pd.read_csv(csv, header=None)
+        self.G = nx.from_numpy_matrix(adj.values)
+        for node_id in self.G.nodes:
+            self.G.node[node_id]['state'] = 'S_a'
+        self.init_state(I1_a, I2_a)
+        
     def step(self):
         population_count = {
             'S_a':  0,

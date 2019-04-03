@@ -1,1 +1,10 @@
-python3 main_v4.2.py --id 0 --N 20 & python3 main_v4.2.py --id 1 --N 20 & python3 main_v4.2.py --id 2 --N 20 & python3 main_v4.2.py --id 3 --N 20 & python3 main_v4.2.py --id 4 --N 20 & python3 main_v4.2.py --id 5 --N 20 & python3 main_v4.2.py --id 6 --N 20 & python3 main_v4.2.py --id 7 --N 20 & python3 main_v4.2.py --id 8 --N 20 & python3 main_v4.2.py --id 9 --N 20 & python3 main_v4.2.py --id 10 --N 20 & python3 main_v4.2.py --id 11 --N 20 & python3 main_v4.2.py --id 12 --N 20 & python3 main_v4.2.py --id 13 --N 20 & python3 main_v4.2.py --id 14 --N 20 & python3 main_v4.2.py --id 15 --N 20 & python3 main_v4.2.py --id 16 --N 20 & python3 main_v4.2.py --id 17 --N 20 & python3 main_v4.2.py --id 18 --N 20 & python3 main_v4.2.py --id 19 --N 20 && fg
+python3 main_v4.2.py --s 0 --f 10 --N 100 --delay_koef 10  --broker_ip 10.101.21.2 & \
+python3 main_v4.2.py --s 10 --f 20 --N 100 --delay_koef 10  --broker_ip 10.101.21.2 & \
+python3 main_v4.2.py --s 20 --f 30 --N 100 --delay_koef 10  --broker_ip 10.101.21.2 & \
+python3 main_v4.2.py --s 30 --f 40 --N 100 --delay_koef 10  --broker_ip 10.101.21.2 & \
+python3 main_v4.2.py --s 40 --f 50 --N 100 --delay_koef 10  --broker_ip 10.101.21.2 & \
+python3 main_v4.2.py --s 50 --f 60 --N 100 --delay_koef 10  --broker_ip 10.101.21.2 & \
+python3 main_v4.2.py --s 60 --f 70 --N 100 --delay_koef 10  --broker_ip 10.101.21.2 & \
+python3 main_v4.2.py --s 70 --f 80 --N 100 --delay_koef 10  --broker_ip 10.101.21.2 & \
+python3 main_v4.2.py --s 80 --f 90 --N 100 --delay_koef 10  --broker_ip 10.101.21.2 & \
+python3 main_v4.2.py --s 90 --f 100 --N 100 --delay_koef 10  --broker_ip 10.101.21.2 && fg

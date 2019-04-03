@@ -3,11 +3,13 @@ from defaults import argHandler #Import the default arguments
 from mqtt_handlers import get_ip
 import numpy as np
 import paho.mqtt.client as paho
-import time
 import itertools
+import random
+import time
 import json
 import sys
 import os
+
 
 # --------- initialization parameters ---------
 FLAGS = argHandler()
@@ -17,8 +19,10 @@ FLAGS['node_ip'] = get_ip()
 print(os.getcwd())
 print(FLAGS)
 N = FLAGS['N']
-# my_id_list = [FLAGS['id']]   # only one node in a list
-my_id_list = list(range(FLAGS['s'], FLAGS['f']))
+if FLAGS['id'] < 0:
+    my_id_list = list(range(FLAGS['s'], FLAGS['f']))
+else:
+    my_id_list = [FLAGS['id']]   # only one node in a list
 print(my_id_list)
 my_neighbours = []
 paramet = {
@@ -141,6 +145,16 @@ mqttc.loop_start()
 while not connflag: time.sleep(0.5)
 print('Starting...')
 
+
+## --------- helper functions ---------
+def wait_until_all_true(true_list, delay=0.1):
+    
+    while not all(true_list): 
+        time.sleep(delay)
+        # nsum = np.sum(true_list)
+        # print(nsum, end=' ')
+    # print()
+
 while True:
     print('Waiting for initialization...')
     while not initflag: time.sleep(0.5)
@@ -155,25 +169,21 @@ while True:
         # --- broadcast current state --- #
         for my_node in my_nodes.values():  # broadcast current state
             my_node.current_step = i
+            time.sleep(random.random()*FLAGS['delay_koef'])
             mqttc.publish('state', json.dumps({"step": i, "pi_id": my_node.pi_id, 'state': my_node.current_state}), 2)
         # --- wait until every node has finished communication --- #
-        # try:
-        while not all(wait_broadcast_finish_flag): 
-            sys.stdout.write('%d\r' % np.sum(wait_broadcast_finish_flag))
-            time.sleep(0.1)
-        # except KeyboardInterrupt:
-        #     print(wait_broadcast_finish_flag)
-        #     np.sum(wait_broadcast_finish_flag)
-        #     sys.exit(1)
+        wait_until_all_true(wait_broadcast_finish_flag)
         wait_broadcast_finish_flag = [False for x in range(N)]
-
+        time.sleep(1)
+        print('## Finish broadcast')
         for my_node in my_nodes.values():  # broadcast current state
+            time.sleep(random.random()*FLAGS['delay_koef'])
             my_node.transit_to_next_state()
         # --- wait until every node has finished transition --- #
-        while not all(wait_transition_finish_flag): 
-            sys.stdout.write('%d\r' % np.sum(wait_transition_finish_flag))
-            time.sleep(0.1)
+        wait_until_all_true(wait_transition_finish_flag)
         wait_transition_finish_flag = [False for x in range(N)]
+        time.sleep(1)
+        print('## Finish transition')
 
 
 
