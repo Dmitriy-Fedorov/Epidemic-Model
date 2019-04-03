@@ -15,22 +15,7 @@ broadcastflag = False
 nextstepflag = False
 timelimitflag = True
 
-
-
-
-
-
-def on_state(client, userdata, msg): 
-    global my_nodes
-    # print("-t {} | -p {}".format(msg.topic, msg.payload.decode()) )
-    try:
-        js = json.loads(msg.payload.decode())
-        for my_node in my_nodes.values():
-            my_node.handle_msg(js)
-        # print(js)
-    except Exception as e:
-        print('Error: ', e)
-    
+   
 
 
 def on_stop(client, userdata, msg): 
@@ -48,17 +33,6 @@ def on_kill(client, userdata, msg):
     sys.exit(0)
 
 
-def on_finish(client, userdata, msg):  # on finish step
-    global node_set, N, broadcastflag, node_list
-    node_id = msg.payload.decode()
-    node_set.discard(node_id)
-    # print('on_finish_2', {e for e in node_set if e in node_list})
-    print('on_finish_2', node_list)
-    if len(node_set) == 0:
-        print('Broadcast finished')
-        broadcastflag = True
-        node_set = {str(x) for x in range(N)}
-
 def on_finish_2(client, userdata, msg):  # on finish step
     global node_set, nextstepflag
     node_id_list = msg.payload.decode()
@@ -75,36 +49,24 @@ def on_finish_2(client, userdata, msg):  # on finish step
 
 mqttc.message_callback_add("stop", on_stop)
 mqttc.message_callback_add("kill", on_kill)
-mqttc.message_callback_add("state", on_state)
-mqttc.message_callback_add("finish", on_finish)
+
+
 mqttc.message_callback_add("nextstep", on_finish_2)
 
 
-mqttc.subscribe("state", 2)
-mqttc.subscribe("start", 2)
+
 mqttc.subscribe("stop", 2)
-mqttc.subscribe("paramet", 2)
-mqttc.subscribe("init", 2)
 mqttc.subscribe("kill", 2)
-mqttc.subscribe("finish", 2)
+
 mqttc.subscribe('nextstep', 2)
 
 
 
 while True:
-    print('Waiting for initialization...')
-    while not initflag: time.sleep(0.5)
-    print('Waiting for start...')
-    while not startflag: time.sleep(0.5)
-    for my_node in my_nodes.values():
-        my_node.current_step = 0
+    
 
-    for i in itertools.count():
-        print('{}) _____________________________________________'.format(i))
+    
         time.sleep(0.2)
-        for my_node in my_nodes.values():
-            # my_node.broadcast(i)
-            mqttc.publish('state', json.dumps({"step": i, "pi_id": my_node.pi_id, 'state': my_node.current_state}), 2)
         limit_counter = 0
         while not broadcastflag: 
             time.sleep(0.1)

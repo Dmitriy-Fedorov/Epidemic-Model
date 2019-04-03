@@ -6,10 +6,11 @@ class argHandler(dict):
     _descriptions = {'help, --h, -h': 'show this super helpful message and exit'}
     
     def setDefaults(self):
-        self.define('broker_ip', '10.101.21.2', 'broker ip adress')
+        # self.define('broker_ip', '10.101.21.2', 'broker ip adress')
+        self.define('broker_ip', 'localhost', 'broker ip adress')
         self.define('node_ip', 'localhost', 'node ip adress')
         self.define('s', 0, 'super node id start range')
-        self.define('f', 1, 'super node id finish range')
+        self.define('f', 10, 'super node id finish range')
         self.define('stotal', 1, 'total number of super nodes')
         self.define('N', 10, 'total number of virtual nodes')
         self.define('id', 0, 'define node ID')

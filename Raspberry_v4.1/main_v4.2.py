@@ -1,6 +1,7 @@
 from node import pi_node, PiTransitionDiagram
 from defaults import argHandler #Import the default arguments
 from mqtt_handlers import get_ip
+import numpy as np
 import paho.mqtt.client as paho
 import time
 import itertools
@@ -38,8 +39,7 @@ connflag = False
 initflag = False
 startflag = False
 wait_broadcast_finish_flag = [False for x in range(N)]
-
-todoflag = [False for x in range(N)]
+wait_transition_finish_flag = [False for x in range(N)]
 
 
 
@@ -103,6 +103,13 @@ def on_finish_handshake(client, userdata, msg):  # on finish step
     # print('on_finish_2', {e for e in node_set if e in node_list})
     # print('on_finish_handshake', node_id)
 
+def on_finish_transition(client, userdata, msg):  # on finish step
+    global wait_transition_finish_flag, FLAGS
+    node_id = int(msg.payload.decode())
+    wait_transition_finish_flag[node_id] = True
+    # print('on_finish_2', {e for e in node_set if e in node_list})
+    # print('on_finish_handshake', node_id)
+
 mqttc.on_connect = on_connect
 mqttc.on_disconnect = on_disconnect
 mqttc.on_message = on_message
@@ -111,6 +118,7 @@ mqttc.message_callback_add("init", on_init)
 mqttc.message_callback_add("start", on_start)
 mqttc.message_callback_add("state", on_state)
 mqttc.message_callback_add("finish", on_finish_handshake)
+mqttc.message_callback_add("finish_trans", on_finish_transition)
 
 
 
@@ -126,6 +134,7 @@ mqttc.subscribe("start", 2)
 mqttc.subscribe("init", 2)
 mqttc.subscribe("paramet", 2)
 mqttc.subscribe("finish", 2)
+mqttc.subscribe("finish_trans", 2)
 
 ## --------- MQTT Start process ---------
 mqttc.loop_start()
@@ -145,12 +154,26 @@ while True:
         print('{}) _____________________________________________'.format(i))
         # --- broadcast current state --- #
         for my_node in my_nodes.values():  # broadcast current state
+            my_node.current_step = i
             mqttc.publish('state', json.dumps({"step": i, "pi_id": my_node.pi_id, 'state': my_node.current_state}), 2)
-        # --- wait until every node has finished communication & transition --- #
+        # --- wait until every node has finished communication --- #
+        # try:
         while not all(wait_broadcast_finish_flag): 
+            sys.stdout.write('%d\r' % np.sum(wait_broadcast_finish_flag))
             time.sleep(0.1)
+        # except KeyboardInterrupt:
+        #     print(wait_broadcast_finish_flag)
+        #     np.sum(wait_broadcast_finish_flag)
+        #     sys.exit(1)
         wait_broadcast_finish_flag = [False for x in range(N)]
-        # time.sleep(0.5)
+
+        for my_node in my_nodes.values():  # broadcast current state
+            my_node.transit_to_next_state()
+        # --- wait until every node has finished transition --- #
+        while not all(wait_transition_finish_flag): 
+            sys.stdout.write('%d\r' % np.sum(wait_transition_finish_flag))
+            time.sleep(0.1)
+        wait_transition_finish_flag = [False for x in range(N)]
 
 
 
