@@ -24,3 +24,6 @@ sys.stdout.write('%.100s\r\n' % i)
 print(5)
 print('asd')
 
+
+
+# rsync -avz -e 'ssh' /mnt/2C3AED6A3AED318E/Dropbox/8th/Capstone/Epidemic-Model/Raspberry_v4.1 pi@10.101.47.225: /home/pi/6pi
