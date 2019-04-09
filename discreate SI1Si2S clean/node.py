@@ -170,6 +170,19 @@ class EpidemicGraph:
         self.init_state(I1_a, I2_a)
         self.connect_nodes()
 
+    def load_csv(self, csv, I0, I1):
+        adj = pd.read_csv(csv, header=None)
+        self.G = nx.from_numpy_matrix(adj.values)
+        for node_id in self.G.nodes:
+            self.G.node[node_id]['state'] = 'S_a'
+        self.init_state(I0, I1)
+        asd = pd.read_csv('{}_position.csv'.format(csv.split('.')[0]),header=None)
+        nx.set_node_attributes(self.G, {i: pos for i, pos in enumerate(asd.values)}, 'position')
+
+    def save_csv(self, csv):
+        pd.DataFrame(nx.adjacency_matrix(self.G).todense()).to_csv(csv, header=None,index=False)
+        pd.DataFrame(nx.get_node_attributes(self.G, 'position')).T.to_csv(csv.split('.')[0] + '_position.csv', header=None,index=False)
+
     def create_nodes(self, n):
         if self.G.graph['net'] == 'Geometric Random':
             for i in range(n):
@@ -231,6 +244,7 @@ class EpidemicGraph:
         return population_count
 
     def run(self, nsteps):
+        assert len(self.G.adj) == self.population_size
         for _ in range(nsteps):
             self.step()
 
