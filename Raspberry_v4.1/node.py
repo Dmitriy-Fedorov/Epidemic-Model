@@ -77,6 +77,7 @@ class pi_node:
         self.pi_neighbours = pi_neighbours
         self.pi_neighbours_handshake = {nid: False for nid in self.pi_neighbours}  
         self.pi_td = pi_td
+        self.past_state = state
         self.current_state = state
         self.current_step = 0
         self.next_state = None
@@ -102,17 +103,17 @@ class pi_node:
         ## ------ handle_msg will drop messages that are not intendent for my_node before this point -------
         
         if self.current_step != msg['step']:
-            if self.pi_id > msg['step']:
-                print('!!! From past ({}) msg : {} !!! pi_id {}, neighbours {} !!!'.format(self.current_step, msg, self.pi_id, self.pi_neighbours))
+            if self.current_step > msg['step']:
+                print('!!!{}->{} From past   msg : {} !!! pi_id {}, neighbours {} !!!'.format(msg['step'], self.current_step, msg, self.pi_id, self.pi_neighbours))
                 return None
             else:
-                print('!!! From future ({}) msg : {} !!! pi_id {}, neighbours {} !!!'.format(self.current_step, msg, self.pi_id, self.pi_neighbours))
+                print('!!!{}->{} From future msg : {} !!! pi_id {}, neighbours {} !!!'.format(msg['step'], self.current_step, msg, self.pi_id, self.pi_neighbours))
                 queue = msg.copy()
-                if 'retry' in queue.keys():
-                    queue['retry'] += 1
-                else:
-                    queue['retry'] = 1
-                return queue
+                queue['r'] = True
+                return None
+        ## ------ handle_msg will drop messages that are duplicates -------    
+        if self.pi_neighbours_handshake[nid]:
+            return None
         ## ------ handle_msg will drop and alert messages that are out of step before this -------
         self.pi_neighbours_handshake[nid] = True  # acknowledge that contact has been done with this neighbour
         if self.current_state == 'S_a' and not self.flag_end_round:  # if it is not yet indected
@@ -134,9 +135,11 @@ class pi_node:
                 self.next_state = next_state
                 self.flag_end_round = True
         if all(self.pi_neighbours_handshake.values()):
-            # self.transit_to_next_state()
-            self.mqttc.publish('finish', str(self.pi_id), qos=self.qos)
-            print(self.current_step, self.pi_id,  ': finish communications 4')
+            self.transit_to_next_state()
+            msg = json.dumps({"step": self.current_step, "pi_id": self.pi_id, 'state': self.past_state, 'r': False})
+            # self.mqttc.publish('finish', str(self.pi_id), qos=self.qos)
+            self.mqttc.publish('finish', json.dumps(msg), qos=self.qos)
+            # print(self.current_step, self.pi_id,  ': finish communications 4')
             
 
     def transit_to_next_state(self):
@@ -144,10 +147,11 @@ class pi_node:
         self.flag_end_round = False
         self.flag_counter = 0
         # print(self.current_step, ': transit_to_next_state:', self.current_state, '->', self.next_state)
+        self.past_state = self.current_state
         self.current_state = self.next_state
         self.pi_neighbours_handshake = {nid: False for nid in self.pi_neighbours} 
         self.current_step += 1
-        self.mqttc.publish('finish_trans', str(self.pi_id), qos=self.qos)
+        # self.mqttc.publish('finish_trans', str(self.pi_id), qos=self.qos)
         
 
     def broadcast(self, current_step):

@@ -40,6 +40,7 @@ my_nodes = {node_id: pi_node(node_id, my_neighbours, my_td, mqttc, state='S_a') 
 # other inits
 node_set_global = {str(x) for x in range(N)}
 my_qos = 2
+sync_step = 0
 
 ## --------- MQTT Flags ---------
 connflag = False
@@ -74,6 +75,7 @@ def on_init(client, userdata, msg):
         my_nodes[my_id].current_state = js[my_id]['state']
         my_nodes[my_id].init_state = js[my_id]['state']
         my_nodes[my_id].pi_neighbours = [x for x in js[my_id]['neighbours']]
+        my_nodes[my_id].pi_neighbours_handshake = {nid: False for nid in js[my_id]['neighbours']} 
         my_nodes[my_id].current_step = 0
 
         print("Initialization...: {}".format(js[my_id]))
@@ -92,31 +94,41 @@ def on_start(client, userdata, msg):
     print("Simulation started: {}".format(msg.payload))
 
 def on_state(client, userdata, msg): 
-    global my_nodes, my_qos
+    global my_nodes, my_qos, sync_step
     # print("-t {} | -p {}".format(msg.topic, msg.payload.decode()) )
     queue = []
     try:
         js = json.loads(msg.payload.decode())
-        for my_node in my_nodes.values():
-            # handle_msg will drop messages that are not intendent for my_node
-            response = my_node.handle_msg(js) 
-            if response is not None:
-                queue.append(response)
-        # print(js)
-        if len(queue) > 0:
-            time.sleep(1)
-            for msg in queue:
-                print('republish', msg)
-                client.publish('state', json.dumps(msg), my_qos)
+        if sync_step == js['step']:
+            for my_node in my_nodes.values():
+                # handle_msg will drop messages that are not intendent for my_node
+                response = my_node.handle_msg(js) 
+                if response is not None:
+                    queue.append(response)
+            # print(js)
+            if len(queue) > 0:
+                time.sleep(1)
+                for msg in queue:
+                    print('republish:', msg)
+                    client.publish('state', json.dumps(msg), my_qos)
     except Exception as e:
         print('on_state error: ', e)
 
 def on_finish_handshake(client, userdata, msg):  # on finish step
-    global wait_broadcast_finish_flag, FLAGS
-    node_id = int(msg.payload.decode())
-    wait_broadcast_finish_flag[node_id] = True
-    # print('on_finish_2', {e for e in node_set if e in node_list})
-    # print('on_finish_handshake', node_id)
+    global wait_broadcast_finish_flag, FLAGS, sync_step
+    asd = msg.payload.decode()
+    js = json.loads(asd)
+    if not isinstance(js, dict):
+        # print(js, type(js), asd)
+        js = json.loads(js)
+    # print(js, type(js), asd)
+    # print(js['step'], type(js['step']))
+    if sync_step == js['step']:
+        node_id = int(js['pi_id'])
+        # node_id = int(msg.payload.decode())
+        wait_broadcast_finish_flag[node_id] = True
+        # print('on_finish_2', {e for e in node_set if e in node_list})
+        # print('on_finish_handshake', node_id)
 
 def on_finish_transition(client, userdata, msg):  # on finish step
     global wait_transition_finish_flag, FLAGS
@@ -133,7 +145,7 @@ mqttc.message_callback_add("init", on_init)
 mqttc.message_callback_add("start", on_start)
 mqttc.message_callback_add("state", on_state)
 mqttc.message_callback_add("finish", on_finish_handshake)
-mqttc.message_callback_add("finish_trans", on_finish_transition)
+# mqttc.message_callback_add("finish_trans", on_finish_transition)
 
 
 
@@ -160,9 +172,26 @@ print('Starting...')
 
 
 ## --------- helper functions ---------
-def wait_until_all_true(true_list, delay=0.1):
-    while not all(true_list): 
+def wait_until_all_true(true_list, mode=1, delay=0.01, step=-1):
+    # while not all(true_list): 
+    #     time.sleep(delay)
+    asd = list(my_nodes.values())
+    asd_len = len(asd)
+    time.sleep(2)
+    for i in itertools.count():
+        if all(true_list): break
         time.sleep(delay)
+        my_node = asd[i%asd_len]
+        if my_node.current_step == step:
+            mqttc.publish('state', json.dumps({"step": my_node.current_step, "pi_id": my_node.pi_id, 'state': my_node.current_state, 'r': True}), 0)
+        elif my_node.current_step -1 == step:
+            msg = json.dumps({"step": my_node.current_step-1, "pi_id": my_node.pi_id, 'state': my_node.past_state, 'r': True})
+            mqttc.publish('state', msg, 0)
+            mqttc.publish('finish', msg, 0)
+        else:
+            assert False
+        # print(np.sum(true_list), end='\r')
+
 
 while True:
     print('Waiting for initialization...')
@@ -175,25 +204,26 @@ while True:
     ## --- Simulation loop
     for i in itertools.count():
         print('{}) _____________________________________________'.format(i))
+        sync_step = i
         # --- broadcast current state --- #
         for my_node in sample(list(my_nodes.values()), len(my_nodes.values())):  # broadcast current state
             my_node.current_step = i
             time.sleep(random.random()*FLAGS['delay_koef'])
-            mqttc.publish('state', json.dumps({"step": i, "pi_id": my_node.pi_id, 'state': my_node.current_state}), my_qos)
+            mqttc.publish('state', json.dumps({"step": i, "pi_id": my_node.pi_id, 'state': my_node.current_state,'r': False}), my_qos)
         # --- wait until every node has finished communication --- #
-        wait_until_all_true(wait_broadcast_finish_flag)
+        wait_until_all_true(wait_broadcast_finish_flag, 1, step=i, delay=FLAGS['delay'])
         time.sleep(FLAGS['delay'])
         wait_broadcast_finish_flag = [False for x in range(N)]
         print('## Finish broadcast')
-        for my_node in sample(list(my_nodes.values()), len(my_nodes.values())):  # broadcast current state
-            time.sleep(random.random()*FLAGS['delay_koef'])
-            my_node.transit_to_next_state()
+        # for my_node in sample(list(my_nodes.values()), len(my_nodes.values())): 
+        #     time.sleep(random.random()*FLAGS['delay_koef'])
+        #     my_node.transit_to_next_state()
         
-        # --- wait until every node has finished transition --- #
-        wait_until_all_true(wait_transition_finish_flag)
-        time.sleep(FLAGS['delay'])
-        wait_transition_finish_flag = [False for x in range(N)]
-        print('## Finish transition')
+        # # --- wait until every node has finished transition --- #
+        # wait_until_all_true(wait_transition_finish_flag, step=i)
+        # time.sleep(FLAGS['delay'])
+        # wait_transition_finish_flag = [False for x in range(N)]
+        # print('## Finish transition')
 
 
 
