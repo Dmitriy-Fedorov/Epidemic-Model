@@ -3,7 +3,7 @@ from numpy.random import uniform
 from random import sample
 import json
 
-print('version v4.1')
+print('version v4.2')
 
 class PiTransitionDiagram:
 
@@ -35,6 +35,7 @@ class PiTransitionDiagram:
         }
     
 
+    # edge transition
     def roll_infection_dice(self, state, nstate, n_id=0): 
         transition_prob = self.transitions[state]
         next_state = state
@@ -46,7 +47,8 @@ class PiTransitionDiagram:
                 next_state = 'I2_a'
         # print(n_id, 'roll_infection_dice:', state, '->', next_state)
         return next_state
-            
+    
+    # node transition
     def roll_end_state(self, state):
         transition_prob = self.transitions[state]
 
@@ -82,6 +84,7 @@ class pi_node:
         self.flag_counter = 0
         self.flag_end_round = False
         self.mqttc = mqttc
+        self.qos = 2
         
     @property
     def n_neighbours(self):
@@ -99,8 +102,17 @@ class pi_node:
         ## ------ handle_msg will drop messages that are not intendent for my_node before this point -------
         
         if self.current_step != msg['step']:
-            print('!!! Out of step ({}) msg : {} !!! pi_id {}, neighbours {} !!!'.format(self.current_step, msg, self.pi_id, self.pi_neighbours))
-            return None
+            if self.pi_id > msg['step']:
+                print('!!! From past ({}) msg : {} !!! pi_id {}, neighbours {} !!!'.format(self.current_step, msg, self.pi_id, self.pi_neighbours))
+                return None
+            else:
+                print('!!! From future ({}) msg : {} !!! pi_id {}, neighbours {} !!!'.format(self.current_step, msg, self.pi_id, self.pi_neighbours))
+                queue = msg.copy()
+                if 'retry' in queue.keys():
+                    queue['retry'] += 1
+                else:
+                    queue['retry'] = 1
+                return queue
         ## ------ handle_msg will drop and alert messages that are out of step before this -------
         self.pi_neighbours_handshake[nid] = True  # acknowledge that contact has been done with this neighbour
         if self.current_state == 'S_a' and not self.flag_end_round:  # if it is not yet indected
@@ -123,7 +135,7 @@ class pi_node:
                 self.flag_end_round = True
         if all(self.pi_neighbours_handshake.values()):
             # self.transit_to_next_state()
-            self.mqttc.publish('finish', str(self.pi_id), qos=2)
+            self.mqttc.publish('finish', str(self.pi_id), qos=self.qos)
             print(self.current_step, self.pi_id,  ': finish communications 4')
             
 
@@ -135,7 +147,7 @@ class pi_node:
         self.current_state = self.next_state
         self.pi_neighbours_handshake = {nid: False for nid in self.pi_neighbours} 
         self.current_step += 1
-        self.mqttc.publish('finish_trans', str(self.pi_id), qos=2)
+        self.mqttc.publish('finish_trans', str(self.pi_id), qos=self.qos)
         
 
     def broadcast(self, current_step):
@@ -146,7 +158,7 @@ class pi_node:
             }
         topic = 'state'
         # print(':', self.pi_id, topic, msg)
-        self.mqttc.publish(topic, json.dumps(msg), 2) 
+        self.mqttc.publish('state', json.dumps(msg), self.qos) 
         # print(':', self.pi_id, 'Published')
 
     def __str__(self):

@@ -1,5 +1,4 @@
 class argHandler(dict):
-    #A super duper fancy custom made CLI argument handler!!
     __getattr__ = dict.get
     __setattr__ = dict.__setitem__
     __delattr__ = dict.__delitem__
@@ -9,27 +8,24 @@ class argHandler(dict):
         self.define('broker_ip', '10.101.21.2', 'broker ip adress')
         # self.define('broker_ip', 'localhost', 'broker ip adress')
         self.define('node_ip', 'localhost', 'node ip adress')
-        self.define('s', 0, 'super node id start range')
-        self.define('f', 10, 'super node id finish range')
-        self.define('stotal', 1, 'total number of super nodes')
+        self.define('s', 0, 'node id start range')
+        self.define('f', 10, 'node id finish range')
+        # self.define('stotal', 1, 'total number of super nodes')
         self.define('N', 10, 'total number of virtual nodes')
         self.define('id', -1, 'define node ID')
-        self.define('delay_koef', 10, 'random delay multiplier koef')
+        self.define('delay_koef', 10.0, 'random delay multiplier koef')
+        self.define('delay', 0.5, 'constant time delay after consensus')
 
     def setDefaultsDeploy(self):
-        # self.define('broker_ip', '10.101.21.2', 'broker ip adress')
         self.setDefaults()
         self.define('step', 1, 'represents number of virtual nodes per process')
-       
-
-
 
     def define(self, argName, default, description):
         self[argName] = default
         self._descriptions[argName] = description
     
     def help(self):
-        print('Example usage: flow --imgdir sample_img/ --model cfg/yolo.cfg --load bin/yolo.weights')
+        print('Example usage: python3 deploy.py --s 0 --f 10 --N 100 --delay_koef 0 --step 1')
         print('')
         print('Arguments:')
         spacing = max([len(i) for i in self._descriptions.keys()]) + 2

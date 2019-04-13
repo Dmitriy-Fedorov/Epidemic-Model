@@ -1,8 +1,9 @@
 from node import pi_node, PiTransitionDiagram
 from defaults import argHandler #Import the default arguments
-from mqtt_handlers import get_ip
+from helpers import get_ip
 import numpy as np
 import paho.mqtt.client as paho
+from random import sample
 import itertools
 import random
 import time
@@ -38,6 +39,8 @@ my_nodes = {node_id: pi_node(node_id, my_neighbours, my_td, mqttc, state='S_a') 
 # print([my_node for my_node in my_nodes.values()])
 # other inits
 node_set_global = {str(x) for x in range(N)}
+my_qos = 2
+
 ## --------- MQTT Flags ---------
 connflag = False
 initflag = False
@@ -79,8 +82,8 @@ def on_init(client, userdata, msg):
 def on_td(client, userdata, msg): 
     global my_nodes
     paramet = json.loads(msg.payload.decode())
-    for my_node in my_nodes:
-        my_nodes.pi_td = PiTransitionDiagram(paramet)
+    for my_node in my_nodes.values():
+        my_node.pi_td = PiTransitionDiagram(paramet)
     print("Parameter change command : {}".format(msg.payload))
     
 def on_start(client, userdata, msg): 
@@ -89,14 +92,22 @@ def on_start(client, userdata, msg):
     print("Simulation started: {}".format(msg.payload))
 
 def on_state(client, userdata, msg): 
-    global my_nodes
+    global my_nodes, my_qos
     # print("-t {} | -p {}".format(msg.topic, msg.payload.decode()) )
+    queue = []
     try:
         js = json.loads(msg.payload.decode())
         for my_node in my_nodes.values():
             # handle_msg will drop messages that are not intendent for my_node
-            my_node.handle_msg(js) 
+            response = my_node.handle_msg(js) 
+            if response is not None:
+                queue.append(response)
         # print(js)
+        if len(queue) > 0:
+            time.sleep(1)
+            for msg in queue:
+                print('republish', msg)
+                client.publish('state', json.dumps(msg), my_qos)
     except Exception as e:
         print('on_state error: ', e)
 
@@ -128,17 +139,19 @@ mqttc.message_callback_add("finish_trans", on_finish_transition)
 
 
 ## --------- MQTT Connect ---------
-mqttc.will_set('dis', payload='disconnected| id {id}: {node_ip}'.format(**FLAGS), qos=0, retain=False)
-mqttc.max_inflight_messages_set(1000)
+mqttc.will_set('dis', payload='disconnected| id {id}: {node_ip}'.format(**FLAGS), qos=2, retain=False)
+# mqttc.max_inflight_messages_set(0)
+# mqttc.max_queued_messages(0)
+# mqttc.max_inflight_messages(0)
 mqttc.connect(FLAGS['broker_ip'])
 
 ## --------- MQTT Subscriptions ---------
-mqttc.subscribe("state", 2)
-mqttc.subscribe("start", 2)
-mqttc.subscribe("init", 2)
-mqttc.subscribe("paramet", 2)
-mqttc.subscribe("finish", 2)
-mqttc.subscribe("finish_trans", 2)
+mqttc.subscribe("state", my_qos)
+mqttc.subscribe("start", my_qos)
+mqttc.subscribe("init", my_qos)
+mqttc.subscribe("paramet", my_qos)
+mqttc.subscribe("finish", my_qos)
+mqttc.subscribe("finish_trans", my_qos)
 
 ## --------- MQTT Start process ---------
 mqttc.loop_start()
@@ -148,12 +161,8 @@ print('Starting...')
 
 ## --------- helper functions ---------
 def wait_until_all_true(true_list, delay=0.1):
-    
     while not all(true_list): 
         time.sleep(delay)
-        # nsum = np.sum(true_list)
-        # print(nsum, end=' ')
-    # print()
 
 while True:
     print('Waiting for initialization...')
@@ -167,22 +176,23 @@ while True:
     for i in itertools.count():
         print('{}) _____________________________________________'.format(i))
         # --- broadcast current state --- #
-        for my_node in my_nodes.values():  # broadcast current state
+        for my_node in sample(list(my_nodes.values()), len(my_nodes.values())):  # broadcast current state
             my_node.current_step = i
             time.sleep(random.random()*FLAGS['delay_koef'])
-            mqttc.publish('state', json.dumps({"step": i, "pi_id": my_node.pi_id, 'state': my_node.current_state}), 2)
+            mqttc.publish('state', json.dumps({"step": i, "pi_id": my_node.pi_id, 'state': my_node.current_state}), my_qos)
         # --- wait until every node has finished communication --- #
         wait_until_all_true(wait_broadcast_finish_flag)
+        time.sleep(FLAGS['delay'])
         wait_broadcast_finish_flag = [False for x in range(N)]
-        time.sleep(1)
         print('## Finish broadcast')
-        for my_node in my_nodes.values():  # broadcast current state
+        for my_node in sample(list(my_nodes.values()), len(my_nodes.values())):  # broadcast current state
             time.sleep(random.random()*FLAGS['delay_koef'])
             my_node.transit_to_next_state()
+        
         # --- wait until every node has finished transition --- #
         wait_until_all_true(wait_transition_finish_flag)
+        time.sleep(FLAGS['delay'])
         wait_transition_finish_flag = [False for x in range(N)]
-        time.sleep(1)
         print('## Finish transition')
 
 
