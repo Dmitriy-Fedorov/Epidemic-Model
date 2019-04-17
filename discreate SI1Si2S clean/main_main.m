@@ -11,17 +11,26 @@ dt = 0.05;
 filename = '100 nodes_position.csv';
 
 global alpha mu gamma lambda kappa
-alpha = [0.5, 0.8]; % infect rate 
-mu = [0.1, 0.1]; % sleep s 
-gamma = [0.3, 0.2]; % rec rate 
-lambda = [0.3, 0.2]; % sleep I1 
-kappa = [0.4, 0.3]; % sleep I2    % [I2_s -> I2_a, I2_a -> I2_s]
+% R00
+% alpha = [0.05, 0.06]; % infect rate 
+% mu = [0.02, 0.02]; % sleep s 
+% gamma = [0.2, 0.3]; % rec rate 
+% lambda = [0.02, 0.08]; % sleep I1 
+% kappa = [0.04, 0.09]; % sleep I2    % [I2_s -> I2_a, I2_a -> I2_s]
+% R10
+alpha = [0.35, 0.05]; % infect rate 
+mu = [0.02, 0.02]; % sleep s 
+gamma = [0.02, 0.2]; % rec rate 
+lambda = [0.04, 0.05]; % sleep I1 
+kappa = [0.02, 0.1]; % sleep I2    % [I2_s -> I2_a, I2_a -> I2_s]
 
 r0=1.5;
 Net2 = NetLoad_Geo(filename, N, r0);
 NetRnd = NetCmbn({Net2, Net2});
 [R0_rnd,R1_rnd,R2_rnd] = calc_R0(NetRnd, alpha, mu, gamma, lambda, kappa, N);
 [R1_rnd;R2_rnd]
+
+% renderNetwork(Net2, 1, '')
 %% Monte Dima
 x0_rnd = Initial_Cond_Gen(N,'Population',[3,5],[I1a_Initial,I2a_Initial]);
 Para = Para_active_sleep_SI1I2S(alpha, mu, gamma, lambda, kappa); 

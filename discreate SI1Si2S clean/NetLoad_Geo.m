@@ -2,11 +2,11 @@ function Net=NetLoad_Geo(filename,N,r)
 
 A = csvread(filename,0,0);
 length(A) == N
-x = A(:,1);
-y = A(:,2);
+x = A(:,1)';
+y = A(:,2)';
 r2=r^2;
-nodes = [x; y]; % stores original coordinates
-
+nodes = [x; y] % stores original coordinates
+% [x, y]
 l=0;
 for i=1:N
     for j=i+1:N
