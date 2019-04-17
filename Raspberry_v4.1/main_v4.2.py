@@ -46,6 +46,7 @@ sync_step = 0
 connflag = False
 initflag = False
 startflag = False
+stopflag = False
 wait_broadcast_finish_flag = [False for x in range(N)]
 wait_transition_finish_flag = [False for x in range(N)]
 
@@ -92,6 +93,11 @@ def on_start(client, userdata, msg):
     global startflag
     startflag = True
     print("Simulation started: {}".format(msg.payload))
+
+def on_stop(client, userdata, msg): 
+    global stopflag
+    stopflag = True
+    print("Stop command : {}".format(msg.payload))
 
 def on_state(client, userdata, msg): 
     global my_nodes, my_qos, sync_step
@@ -146,6 +152,7 @@ mqttc.message_callback_add("start", on_start)
 mqttc.message_callback_add("state", on_state)
 mqttc.message_callback_add("finish", on_finish_handshake)
 # mqttc.message_callback_add("finish_trans", on_finish_transition)
+mqttc.message_callback_add("stop", on_stop)
 
 
 
@@ -164,6 +171,7 @@ mqttc.subscribe("init", my_qos)
 mqttc.subscribe("paramet", my_qos)
 mqttc.subscribe("finish", my_qos)
 mqttc.subscribe("finish_trans", my_qos)
+mqttc.subscribe("stop", my_qos)
 
 ## --------- MQTT Start process ---------
 mqttc.loop_start()
@@ -215,15 +223,18 @@ while True:
         time.sleep(FLAGS['delay'])
         wait_broadcast_finish_flag = [False for x in range(N)]
         print('## Finish broadcast')
-        # for my_node in sample(list(my_nodes.values()), len(my_nodes.values())): 
-        #     time.sleep(random.random()*FLAGS['delay_koef'])
-        #     my_node.transit_to_next_state()
-        
-        # # --- wait until every node has finished transition --- #
-        # wait_until_all_true(wait_transition_finish_flag, step=i)
-        # time.sleep(FLAGS['delay'])
-        # wait_transition_finish_flag = [False for x in range(N)]
-        # print('## Finish transition')
+
+        if stopflag:
+            ## --------- Reinit MQTT Flags ---------
+            connflag = False
+            initflag = False
+            startflag = False
+            stopflag = False
+            wait_broadcast_finish_flag = [False for x in range(N)]
+            wait_transition_finish_flag = [False for x in range(N)]
+            print('Simulation is stopped...')
+            print('\n\n\n\n\n\n_______________________________________')
+            break
 
 
 
